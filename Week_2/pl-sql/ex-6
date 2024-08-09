@@ -1,0 +1,96 @@
+Exercise 6:
+(SCENARIO 1)
+DECLARE
+    CURSOR c_Transactions IS
+        SELECT c.CustomerID, c.Name, t.TransactionID, t.TransactionDate, t.Amount, t.TransactionType
+        FROM Customers c
+        JOIN Accounts a ON c.CustomerID = a.CustomerID
+        JOIN Transactions t ON a.AccountID = t.AccountID
+        WHERE EXTRACT(MONTH FROM t.TransactionDate) = EXTRACT(MONTH FROM SYSDATE)
+          AND EXTRACT(YEAR FROM t.TransactionDate) = EXTRACT(YEAR FROM SYSDATE)
+        ORDER BY c.CustomerID, t.TransactionDate;
+    
+    v_CustomerID Customers.CustomerID%TYPE;
+    v_CustomerName Customers.Name%TYPE;
+    v_TransactionID Transactions.TransactionID%TYPE;
+    v_TransactionDate Transactions.TransactionDate%TYPE;
+    v_Amount Transactions.Amount%TYPE;
+    v_TransactionType Transactions.TransactionType%TYPE;
+BEGIN
+    FOR r IN c_Transactions LOOP
+        v_CustomerID := r.CustomerID;
+        v_CustomerName := r.Name;
+        v_TransactionID := r.TransactionID;
+        v_TransactionDate := r.TransactionDate;
+        v_Amount := r.Amount;
+        v_TransactionType := r.TransactionType;
+
+        -- Print statement (or could be stored in a table, file, etc.)
+        DBMS_OUTPUT.PUT_LINE('Customer ID: ' || v_CustomerID);
+        DBMS_OUTPUT.PUT_LINE('Customer Name: ' || v_CustomerName);
+        DBMS_OUTPUT.PUT_LINE('Transaction ID: ' || v_TransactionID);
+        DBMS_OUTPUT.PUT_LINE('Transaction Date: ' || TO_CHAR(v_TransactionDate, 'YYYY-MM-DD'));
+        DBMS_OUTPUT.PUT_LINE('Amount: ' || v_Amount);
+        DBMS_OUTPUT.PUT_LINE('Transaction Type: ' || v_TransactionType);
+        DBMS_OUTPUT.PUT_LINE('----------------------------------------');
+    END LOOP;
+END;
+/
+
+(SCENARIO 2)
+DECLARE
+    CURSOR c_Accounts IS
+        SELECT AccountID, Balance
+        FROM Accounts;
+    
+    v_AccountID Accounts.AccountID%TYPE;
+    v_Balance Accounts.Balance%TYPE;
+    v_AnnualFee NUMBER := 50; -- Example annual maintenance fee
+BEGIN
+    FOR r IN c_Accounts LOOP
+        v_AccountID := r.AccountID;
+        v_Balance := r.Balance;
+
+        -- Deduct the annual maintenance fee
+        UPDATE Accounts
+        SET Balance = Balance - v_AnnualFee
+        WHERE AccountID = v_AccountID;
+
+        -- Print a confirmation message
+        DBMS_OUTPUT.PUT_LINE('Account ID: ' || v_AccountID || ' - Fee applied. New Balance: ' || (v_Balance - v_AnnualFee));
+    END LOOP;
+    
+    COMMIT;
+END;
+/
+
+(SCENARIO 3)
+DECLARE
+    CURSOR c_Loans IS
+        SELECT LoanID, InterestRate
+        FROM Loans;
+    
+    v_LoanID Loans.LoanID%TYPE;
+    v_OldInterestRate Loans.InterestRate%TYPE;
+    v_NewInterestRate Loans.InterestRate%TYPE;
+BEGIN
+    FOR r IN c_Loans LOOP
+        v_LoanID := r.LoanID;
+        v_OldInterestRate := r.InterestRate;
+        
+        -- Apply new interest rate policy (example: increase all rates by 1%)
+        v_NewInterestRate := v_OldInterestRate + 1;
+        
+        -- Update the interest rate
+        UPDATE Loans
+        SET InterestRate = v_NewInterestRate
+        WHERE LoanID = v_LoanID;
+
+        -- Print a confirmation message
+        DBMS_OUTPUT.PUT_LINE('Loan ID: ' || v_LoanID || ' - Old Interest Rate: ' || v_OldInterestRate || ', New Interest Rate: ' || v_NewInterestRate);
+    END LOOP;
+    
+    COMMIT;
+END;
+/
+

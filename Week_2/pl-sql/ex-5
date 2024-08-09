@@ -1,0 +1,64 @@
+(SCENARIO 1)
+CREATE OR REPLACE TRIGGER UpdateCustomerLastModified
+BEFORE UPDATE ON Customers
+FOR EACH ROW
+BEGIN
+    -- Set LastModified to the current date
+    :NEW.LastModified := SYSDATE;
+END;
+/
+
+(SCENARIO 2)
+--Creating an Auditlog table
+CREATE TABLE AuditLog (
+    AuditID NUMBER PRIMARY KEY,
+    TransactionID NUMBER,
+    AuditDate DATE,
+    Action VARCHAR2(50),
+    Details VARCHAR2(255)
+);
+--LogTransaction trigger
+CREATE OR REPLACE TRIGGER LogTransaction
+AFTER INSERT ON Transactions
+FOR EACH ROW
+BEGIN
+    -- Insert a record into the AuditLog table
+    INSERT INTO AuditLog (AuditID, TransactionID, AuditDate, Action, Details)
+    VALUES (
+        AuditLog_SEQ.NEXTVAL, -- Assuming there's a sequence named AuditLog_SEQ for generating IDs
+        :NEW.TransactionID,
+        SYSDATE,
+        'INSERT',
+        'Transaction amount: ' || :NEW.Amount || ', Type: ' || :NEW.TransactionType
+    );
+END;
+/
+
+(SCENATIO 3)
+CREATE OR REPLACE TRIGGER CheckTransactionRules
+BEFORE INSERT ON Transactions
+FOR EACH ROW
+DECLARE
+    v_Balance NUMBER;
+BEGIN
+    -- Retrieve the balance of the account
+    SELECT Balance INTO v_Balance
+    FROM Accounts
+    WHERE AccountID = :NEW.AccountID;
+    
+    -- Check if the transaction type is 'Withdrawal'
+    IF :NEW.TransactionType = 'Withdrawal' THEN
+        -- Ensure the withdrawal amount does not exceed the account balance
+        IF :NEW.Amount > v_Balance THEN
+            RAISE_APPLICATION_ERROR(-20001, 'Withdrawal amount exceeds account balance.');
+        END IF;
+    ELSIF :NEW.TransactionType = 'Deposit' THEN
+        -- Ensure the deposit amount is positive
+        IF :NEW.Amount <= 0 THEN
+            RAISE_APPLICATION_ERROR(-20002, 'Deposit amount must be greater than zero.');
+        END IF;
+    ELSE
+        RAISE_APPLICATION_ERROR(-20003, 'Invalid transaction type.');
+    END IF;
+END;
+/

@@ -1,0 +1,105 @@
+Exercise 2:
+(SCENARIO 1)
+CREATE OR REPLACE PROCEDURE SafeTransferFunds (
+    p_FromAccountID IN NUMBER,
+    p_ToAccountID IN NUMBER,
+    p_Amount IN NUMBER
+) AS
+    v_FromBalance NUMBER;
+    v_ToBalance NUMBER;
+BEGIN
+    -- Check if the amount is positive
+    IF p_Amount <= 0 THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Transfer amount must be greater than zero.');
+    END IF;
+
+    -- Get current balances
+    SELECT Balance INTO v_FromBalance
+    FROM Accounts
+    WHERE AccountID = p_FromAccountID;
+    
+    SELECT Balance INTO v_ToBalance
+    FROM Accounts
+    WHERE AccountID = p_ToAccountID;
+    
+    -- Check for sufficient funds
+    IF v_FromBalance < p_Amount THEN
+        RAISE_APPLICATION_ERROR(-20002, 'Insufficient funds in the source account.');
+    END IF;
+    
+    -- Perform the transfer
+    BEGIN
+        UPDATE Accounts
+        SET Balance = Balance - p_Amount
+        WHERE AccountID = p_FromAccountID;
+        
+        UPDATE Accounts
+        SET Balance = Balance + p_Amount
+        WHERE AccountID = p_ToAccountID;
+        
+        COMMIT;
+    EXCEPTION
+        WHEN OTHERS THEN
+            ROLLBACK;
+            DBMS_OUTPUT.PUT_LINE('Error during fund transfer: ' || SQLERRM);
+            RAISE;
+    END;
+END;
+/
+
+(SCENARIO 2)
+CREATE OR REPLACE PROCEDURE UpdateSalary (
+    p_EmployeeID IN NUMBER,
+    p_Percentage IN NUMBER
+) AS
+BEGIN
+    -- Check if percentage is valid
+    IF p_Percentage <= 0 THEN
+        RAISE_APPLICATION_ERROR(-20003, 'Percentage must be greater than zero.');
+    END IF;
+
+    -- Update salary
+    BEGIN
+        UPDATE Employees
+        SET Salary = Salary + (Salary * p_Percentage / 100)
+        WHERE EmployeeID = p_EmployeeID;
+        
+        IF SQL%ROWCOUNT = 0 THEN
+            RAISE_APPLICATION_ERROR(-20004, 'Employee ID does not exist.');
+        END IF;
+        
+        COMMIT;
+    EXCEPTION
+        WHEN OTHERS THEN
+            ROLLBACK;
+            DBMS_OUTPUT.PUT_LINE('Error updating salary: ' || SQLERRM);
+            RAISE;
+    END;
+END;
+/
+
+(SCENARIO 3)
+CREATE OR REPLACE PROCEDURE AddNewCustomer (
+    p_CustomerID IN NUMBER,
+    p_Name IN VARCHAR2,
+    p_DOB IN DATE,
+    p_Balance IN NUMBER
+) AS
+BEGIN
+    -- Check if customer already exists
+    BEGIN
+        INSERT INTO Customers (CustomerID, Name, DOB, Balance, LastModified)
+        VALUES (p_CustomerID, p_Name, p_DOB, p_Balance, SYSDATE);
+        
+        COMMIT;
+    EXCEPTION
+        WHEN DUP_VAL_ON_INDEX THEN
+            DBMS_OUTPUT.PUT_LINE('Error: A customer with this ID already exists.');
+        WHEN OTHERS THEN
+            ROLLBACK;
+            DBMS_OUTPUT.PUT_LINE('Error adding new customer: ' || SQLERRM);
+            RAISE;
+    END;
+END;
+/
+

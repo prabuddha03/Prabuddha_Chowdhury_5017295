@@ -1,0 +1,36 @@
+Scenario 1:
+CREATE OR REPLACE FUNCTION CalculateAge( p_DOB IN DATE)
+ RETURN NUMBER IS v_Age NUMBER;
+BEGIN
+    v_Age := TRUNC(MONTHS_BETWEEN(SYSDATE, p_DOB) / 12);
+    RETURN v_Age;
+END CalculateAge;
+/
+
+
+
+Scenario 2:
+CREATE OR REPLACE FUNCTION CalculateMonthlyInstallment(p_LoanAmount IN NUMBER,p_InterestRate IN NUMBER,p_LoanDurationYears IN NUMBER
+) RETURN NUMBER IS
+    v_MonthlyInstallment NUMBER; v_MonthlyInterestRate NUMBER; v_NumberOfPayments NUMBER;
+BEGIN
+    v_MonthlyInterestRate := p_InterestRate / 12 / 100;
+    v_NumberOfPayments := p_LoanDurationYears * 12;
+    v_MonthlyInstallment := (p_LoanAmount * v_MonthlyInterestRate) / (1 - POWER(1 + v_MonthlyInterestRate, -v_NumberOfPayments));
+    RETURN v_MonthlyInstallment;
+END CalculateMonthlyInstallment;
+/
+
+
+
+Scenario 3:
+CREATE OR REPLACE FUNCTION HasSufficientBalance(p_AccountID IN Accounts.AccountID%TYPE,p_Amount IN NUMBER
+) RETURN BOOLEAN IS
+    v_Balance Accounts.Balance%TYPE;
+BEGIN
+    SELECT Balance INTO v_Balance FROM Accounts WHERE AccountID = p_AccountID;
+    IF v_Balance >= p_Amount THEN RETURN TRUE;
+    ELSE RETURN FALSE;
+    END IF;
+END HasSufficientBalance;
+/

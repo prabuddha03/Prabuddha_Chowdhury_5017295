@@ -1,0 +1,73 @@
+Scenario-1
+
+CREATE OR REPLACE PROCEDURE ProcessMonthlyInterest IS
+BEGIN
+    FOR acc_rec IN (SELECT AccountID, Balance FROM Accounts WHERE AccountType = 'Savings') LOOP
+        -- Update the balance with 1% interest
+        UPDATE Accounts
+        SET Balance = Balance + (Balance * 0.01),
+            LastModified = SYSDATE
+        WHERE AccountID = acc_rec.AccountID;
+    END LOOP;
+
+    COMMIT;
+END ProcessMonthlyInterest;
+/
+
+Scenario-2
+
+CREATE OR REPLACE PROCEDURE UpdateEmployeeBonus(
+    p_Department IN Employees.Department%TYPE,
+    p_BonusPercentage IN NUMBER
+) IS
+BEGIN
+    FOR emp_rec IN (SELECT EmployeeID, Salary FROM Employees WHERE Department = p_Department) LOOP
+        -- Update the salary with the bonus percentage
+        UPDATE Employees
+        SET Salary = Salary + (Salary * p_BonusPercentage / 100),
+            HireDate = SYSDATE
+        WHERE EmployeeID = emp_rec.EmployeeID;
+    END LOOP;
+
+    COMMIT;
+END UpdateEmployeeBonus;
+/
+
+Scenario-3
+
+CREATE OR REPLACE PROCEDURE TransferFunds(
+    p_FromAccountID IN Accounts.AccountID%TYPE,
+    p_ToAccountID IN Accounts.AccountID%TYPE,
+    p_Amount IN NUMBER
+) IS
+    v_FromBalance Accounts.Balance%TYPE;
+BEGIN
+    -- Check the balance of the source account
+    SELECT Balance INTO v_FromBalance FROM Accounts WHERE AccountID = p_FromAccountID FOR UPDATE;
+
+    -- Check if sufficient balance exists
+    IF v_FromBalance < p_Amount THEN
+        RAISE_APPLICATION_ERROR(-20002, 'Insufficient funds in the source account.');
+    END IF;
+
+    -- Debit the source account
+    UPDATE Accounts
+    SET Balance = Balance - p_Amount,
+        LastModified = SYSDATE
+    WHERE AccountID = p_FromAccountID;
+
+    -- Credit the destination account
+    UPDATE Accounts
+    SET Balance = Balance + p_Amount,
+        LastModified = SYSDATE
+    WHERE AccountID = p_ToAccountID;
+
+    COMMIT;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Handle errors and rollback transaction
+        DBMS_OUTPUT.PUT_LINE('Error during fund transfer: ' || SQLERRM);
+        ROLLBACK;
+END TransferFunds;
+/

@@ -1,0 +1,170 @@
+Scenario 1:
+CREATE OR REPLACE PACKAGE CustomerManagement IS
+    PROCEDURE AddCustomer(
+        p_CustomerID IN Customers.CustomerID%TYPE,
+        p_Name IN Customers.Name%TYPE,
+        p_DOB IN Customers.DOB%TYPE,
+        p_Balance IN Customers.Balance%TYPE
+    );
+
+    PROCEDURE UpdateCustomer(
+        p_CustomerID IN Customers.CustomerID%TYPE,
+        p_Name IN Customers.Name%TYPE,
+        p_DOB IN Customers.DOB%TYPE,
+        p_Balance IN Customers.Balance%TYPE
+    );
+
+    FUNCTION GetCustomerBalance(
+        p_CustomerID IN Customers.CustomerID%TYPE
+    ) RETURN NUMBER;
+END CustomerManagement;
+/
+
+CREATE OR REPLACE PACKAGE BODY CustomerManagement IS
+    PROCEDURE AddCustomer(
+        p_CustomerID IN Customers.CustomerID%TYPE,
+        p_Name IN Customers.Name%TYPE,
+        p_DOB IN Customers.DOB%TYPE,
+        p_Balance IN Customers.Balance%TYPE
+    ) IS
+    BEGIN
+        INSERT INTO Customers (CustomerID, Name, DOB, Balance, LastModified)
+        VALUES (p_CustomerID, p_Name, p_DOB, p_Balance, SYSDATE);
+
+        COMMIT;
+    END AddCustomer;
+
+    PROCEDURE UpdateCustomer(
+        p_CustomerID IN Customers.CustomerID%TYPE,
+        p_Name IN Customers.Name%TYPE,
+        p_DOB IN Customers.DOB%TYPE,
+        p_Balance IN Customers.Balance%TYPE
+    ) IS
+    BEGIN
+        UPDATE Customers
+        SET Name = p_Name, DOB = p_DOB, Balance = p_Balance, LastModified = SYSDATE
+        WHERE CustomerID = p_CustomerID;
+        COMMIT;
+    END UpdateCustomer;
+
+    FUNCTION GetCustomerBalance( p_CustomerID IN Customers.CustomerID%TYPE)
+    RETURN NUMBER IS v_Balance Customers.Balance%TYPE;
+    BEGIN
+        SELECT Balance INTO v_Balance FROM Customers WHERE CustomerID = p_CustomerID;
+        RETURN v_Balance;
+    END GetCustomerBalance;
+END CustomerManagement;
+/
+
+
+
+Scenario 2:
+CREATE OR REPLACE PACKAGE EmployeeManagement IS
+    PROCEDURE HireEmployee(
+        p_EmployeeID IN Employees.EmployeeID%TYPE,
+        p_Name IN Employees.Name%TYPE,
+        p_Position IN Employees.Position%TYPE,
+        p_Salary IN Employees.Salary%TYPE,
+        p_Department IN Employees.Department%TYPE
+    );
+
+    PROCEDURE UpdateEmployeeDetails(
+        p_EmployeeID IN Employees.EmployeeID%TYPE,
+        p_Name IN Employees.Name%TYPE,
+        p_Position IN Employees.Position%TYPE,
+        p_Salary IN Employees.Salary%TYPE,
+        p_Department IN Employees.Department%TYPE
+    );
+
+    FUNCTION CalculateAnnualSalary( p_EmployeeID IN Employees.EmployeeID%TYPE)
+    RETURN NUMBER;
+END EmployeeManagement;
+/
+
+CREATE OR REPLACE PACKAGE BODY EmployeeManagement IS
+    PROCEDURE HireEmployee(
+        p_EmployeeID IN Employees.EmployeeID%TYPE,
+        p_Name IN Employees.Name%TYPE,
+        p_Position IN Employees.Position%TYPE,
+        p_Salary IN Employees.Salary%TYPE,
+        p_Department IN Employees.Department%TYPE
+    ) IS
+    BEGIN
+        INSERT INTO Employees (EmployeeID, Name, Position, Salary, Department, HireDate)
+        VALUES (p_EmployeeID, p_Name, p_Position, p_Salary, p_Department, SYSDATE);
+        COMMIT;
+    END HireEmployee;
+
+    PROCEDURE UpdateEmployeeDetails(
+        p_EmployeeID IN Employees.EmployeeID%TYPE,
+        p_Name IN Employees.Name%TYPE,
+        p_Position IN Employees.Position%TYPE,
+        p_Salary IN Employees.Salary%TYPE,
+        p_Department IN Employees.Department%TYPE
+    ) IS
+    BEGIN
+        UPDATE Employees
+        SET Name = p_Name,
+            Position = p_Position,
+            Salary = p_Salary,
+            Department = p_Department,
+            HireDate = SYSDATE
+        WHERE EmployeeID = p_EmployeeID;
+
+        COMMIT;
+    END UpdateEmployeeDetails;
+
+    FUNCTION CalculateAnnualSalary( p_EmployeeID IN Employees.EmployeeID%TYPE )
+    RETURN NUMBER IS v_AnnualSalary NUMBER;
+    BEGIN
+        SELECT Salary * 12 INTO v_AnnualSalary FROM Employees WHERE EmployeeID = p_EmployeeID;
+        RETURN v_AnnualSalary;
+    END CalculateAnnualSalary;
+END EmployeeManagement;
+/
+
+
+
+
+Scenario 3:
+CREATE OR REPLACE PACKAGE AccountOperations IS
+    PROCEDURE OpenAccount(
+        p_AccountID IN Accounts.AccountID%TYPE,
+        p_CustomerID IN Accounts.CustomerID%TYPE,
+        p_AccountType IN Accounts.AccountType%TYPE,
+        p_Balance IN Accounts.Balance%TYPE
+    );
+
+    PROCEDURE CloseAccount( p_AccountID IN Accounts.AccountID%TYPE );
+    FUNCTION GetTotalBalance( p_CustomerID IN Accounts.CustomerID%TYPE )
+    RETURN NUMBER;
+END AccountOperations;
+/
+
+CREATE OR REPLACE PACKAGE BODY AccountOperations IS
+    PROCEDURE OpenAccount(
+        p_AccountID IN Accounts.AccountID%TYPE,
+        p_CustomerID IN Accounts.CustomerID%TYPE,
+        p_AccountType IN Accounts.AccountType%TYPE,
+        p_Balance IN Accounts.Balance%TYPE
+    ) IS
+    BEGIN
+        INSERT INTO Accounts (AccountID, CustomerID, AccountType, Balance, LastModified)
+        VALUES (p_AccountID, p_CustomerID, p_AccountType, p_Balance, SYSDATE);
+        COMMIT;
+    END OpenAccount;
+
+    PROCEDURE CloseAccount( p_AccountID IN Accounts.AccountID%TYPE ) IS
+    BEGIN
+        DELETE FROM Accounts WHERE AccountID = p_AccountID;
+        COMMIT;
+    END CloseAccount;
+
+    FUNCTION GetTotalBalance( p_CustomerID IN Accounts.CustomerID%TYPE )
+    RETURN NUMBER IS v_TotalBalance NUMBER;
+    BEGIN
+        SELECT SUM(Balance) INTO v_TotalBalance FROM Accounts WHERE CustomerID = p_CustomerID;
+        RETURN v_TotalBalance;
+    END GetTotalBalance;
+END AccountOperations;
+/
